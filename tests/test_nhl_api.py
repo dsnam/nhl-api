@@ -19,5 +19,12 @@ def test_team_list():
     assert isinstance(teams, list)
     print(teams)
 
-test_team_list()
-test_remaining_games()
+def test_standings():
+    nhl = NHL()
+    table = nhl.get_points_gp()
+    assert isinstance(table, dict)
+    print(table)
+
+test_standings()
+#test_team_list()
+#test_remaining_games()

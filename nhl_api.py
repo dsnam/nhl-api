@@ -80,4 +80,18 @@ class NHL:
 
         return self.get(ep)
 
+    def get_points_gp(self):
+        standings = self.get_standings()
+        table = {}
+        for record in standings['records']:
+            div = (record['division']['id'], record['division']['name'])
+            conf = (record['conference']['id'], record['conference']['name'])
+            for team_record in record['teamRecords']:
+                team = (team_record['team']['id'], team_record['team']['name'])
+                table[team] = {'conf': conf, 'div': div, 'pts': team_record['points'], 'gp': team_record['gamesPlayed']}
+
+        return table
+
+
+
 
