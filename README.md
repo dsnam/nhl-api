@@ -6,9 +6,7 @@ Currently supported:
 
 json results for teams, schedule, standings
 
-You can also get: 
-
-a list of teams and their api ids 
+You can also get a list of teams and their api ids 
 ```python
 (18, 'Nashville Predators')
 ```
