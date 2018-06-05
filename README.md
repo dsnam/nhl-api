@@ -23,4 +23,5 @@ as well as each team's remaining games against every other team:
 
 Still to come:
 Full support for all endpoint parameters
+
 Support for game, prospects, awards, draft endpoints
