@@ -18,7 +18,7 @@ class NHL:
         self.teams = []
         self.players = []
 
-    def get(self, endpoint, params={}):
+    def get(self, endpoint, params=None):
         """
         :param endpoint: nhl api endpoint
         :param params: parameters for the endpoint. see specific get_ methods for detail
@@ -64,10 +64,10 @@ class NHL:
         :param team_id: limit result to a team or list of teams
         :return: remaining regular season games for each team, split by opponent
         """
-        teams = self.get_teams_list()
+        teams = self.teams_list()
         remaining_by_team = {team: {t: 0 for t in teams if t != team} for team in teams}
 
-        schedule = self.get_schedule(start_date, start_date.strftime("%Y")+'-04-30')
+        schedule = self.get_schedule(start_date.strftime("%Y-%m-%d"), start_date.strftime("%Y")+'-04-30')
         for game_dates in schedule['dates']:
             for game in game_dates['games']:
                 if game['gameType'] == 'R' and game['status']['abstractGameState'] != 'Final':
@@ -145,13 +145,13 @@ class NHL:
 
         return roster
 
-    def players(self, refresh=False):
+    def player_list(self, refresh=False, ):
         """
         :param refresh: calls the api again instead of returning cached data
         :return: a list of Player namedtuples
         """
         if refresh or not self.players:
-            for team in self.get_teams_list():
+            for team in self.teams_list():
                 roster = self.get_roster(team.team_id)['roster']
                 for player in roster:
                     self.players.append(self.Player(str(player['person']['id']), player['person']['fullName']))
@@ -163,7 +163,7 @@ class NHL:
 
         return self.get(endpoint)
 
-    def get_player_stats(self, player_id: str, goals_by_situation=False):
+    def get_player_stats(self, player_id: str, goals_by_situation=False, season=None):
         """
         :param player_id: id of player to fetch stats for
         :param goals_by_situation: include goals by situation data
@@ -172,9 +172,22 @@ class NHL:
         endpoint = ''.join(['people/', player_id, '/stats'])
         params = {}
         stats = []
+        if season:
+            params['season'] = season
         if goals_by_situation:
             stats.append('goalsByGameSituation')
         if stats:
             params['stats'] = stats
 
         return self.get(endpoint, params)
+
+    def player_goal_situations(self, season=None):
+        player_goal_situations = {}
+        self.players = self.player_list()
+        for player in self.players:
+            player_stats = self.get_player_stats(player.player_id, goals_by_situation=True, season=season)['stats']
+            goal_situations = {x: player_stats[0]['splits'][0]['stat'][x]
+                               for x in player_stats[0]['splits'][0]['stat'].keys()}
+            player_goal_situations[player] = goal_situations
+
+        return player_goal_situations
