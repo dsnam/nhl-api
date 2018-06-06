@@ -14,7 +14,7 @@ class NHL:
     def __init__(self):
         self.nhl_endpoint = 'https://statsapi.web.nhl.com/api/v1/'
         self.Team = namedtuple('Team', ['team_id', 'name'])
-        self.Player = namedtuple('Player', ['player_id', 'name', 'position_type', 'team'])
+        self.Player = namedtuple('Player', ['player_id', 'name', 'position_type', 'team', 'position_name'])
         self.teams = []
         self.team_to_id = {}
         self.id_to_team = {}
@@ -165,7 +165,7 @@ class NHL:
                 for player in roster:
                     if not position_type or (position_type and player['position']['type'] in position_type):
                         self.players.append(self.Player(str(player['person']['id']), player['person']['fullName'],
-                                                        player['position']['type'], team.name))
+                                                        player['position']['type'], team.name, player['position']['name']))
                         self.player_to_id[player['person']['fullName']] = str(player['person']['id'])
                         self.id_to_player[str(player['person']['id'])] = player['person']['fullName']
 
