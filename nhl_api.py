@@ -14,9 +14,13 @@ class NHL:
     def __init__(self):
         self.nhl_endpoint = 'https://statsapi.web.nhl.com/api/v1/'
         self.Team = namedtuple('Team', ['team_id', 'name'])
-        self.Player = namedtuple('Player', ['player_id', 'name'])
+        self.Player = namedtuple('Player', ['player_id', 'name', 'position_type', 'team'])
         self.teams = []
+        self.team_to_id = {}
+        self.id_to_team = {}
         self.players = []
+        self.player_to_id = {}
+        self.id_to_player = {}
 
     def get(self, endpoint, params=None):
         """
@@ -92,8 +96,11 @@ class NHL:
         :return: processes the response to return a list of Team namedtuples
         """
         if refresh or not self.teams:
+            self.teams = []
             for team in self.get_teams()['teams']:
                 self.teams.append(self.Team(str(team['id']), team['name']))
+                self.id_to_team[str(team['id'])] = team['name']
+                self.team_to_id[team['name']] = str(team['id'])
 
         return self.teams
 
@@ -145,16 +152,22 @@ class NHL:
 
         return roster
 
-    def player_list(self, refresh=False, ):
+    def player_list(self, refresh=False, position_type=None):
         """
         :param refresh: calls the api again instead of returning cached data
+        :param position: Goalie, Forward, Defenseman
         :return: a list of Player namedtuples
         """
         if refresh or not self.players:
+            self.players = []
             for team in self.teams_list():
                 roster = self.get_roster(team.team_id)['roster']
                 for player in roster:
-                    self.players.append(self.Player(str(player['person']['id']), player['person']['fullName']))
+                    if not position_type or (position_type and player['position']['type'] in position_type):
+                        self.players.append(self.Player(str(player['person']['id']), player['person']['fullName'],
+                                                        player['position']['type'], team.name))
+                        self.player_to_id[player['person']['fullName']] = str(player['person']['id'])
+                        self.id_to_player[str(player['person']['id'])] = player['person']['fullName']
 
         return self.players
 
@@ -181,13 +194,11 @@ class NHL:
 
         return self.get(endpoint, params)
 
-    def player_goal_situations(self, season=None):
-        player_goal_situations = {}
-        self.players = self.player_list()
-        for player in self.players:
-            player_stats = self.get_player_stats(player.player_id, goals_by_situation=True, season=season)['stats']
+    def player_goal_situations(self, player_id: str, season=None):
+        player_stats = self.get_player_stats(player_id, goals_by_situation=True, season=season)['stats']
+        goal_situations = {}
+        if len(player_stats[0]['splits']) > 0:
             goal_situations = {x: player_stats[0]['splits'][0]['stat'][x]
                                for x in player_stats[0]['splits'][0]['stat'].keys()}
-            player_goal_situations[player] = goal_situations
 
-        return player_goal_situations
+        return goal_situations
